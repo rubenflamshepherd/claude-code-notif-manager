@@ -14,69 +14,13 @@ Claude Code [hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) trigge
 
 ## Prerequisites
 
-- Node.js 18+
-
-## Setup
-
-### 1. Install dependencies
-
 ```bash
 brew install fswatch ffmpeg
 ```
 
-### 2. Configure Claude Code hooks
+## Quick Start
 
-Add this to `~/.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|clear",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "touch ~/.claude/.claude-start"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "touch ~/.claude/.claude-prompt"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "touch ~/.claude/.claude-done"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "touch ~/.claude/.claude-compact"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-### 3. Download StarCraft sounds
+### 1. Start the app
 
 ```bash
 cd sc2-downloader
@@ -84,24 +28,18 @@ npm run install:all
 npm run dev
 ```
 
-Open http://localhost:5173, browse units, and select quotes. Use the dropdown to pick which event folder to save to, then click **Save to Sounds**. Files are saved directly to `~/.claude/sounds/<folder>/`.
+### 2. One-Click Setup
 
-| Folder | Event |
-|--------|-------|
-| `done` | Claude finishes responding |
-| `start` | Session starts |
-| `userpromptsubmit` | You submit a prompt |
-| `precompact` | Before context compaction |
+Open http://localhost:5173 and click **One-Click Setup**. This will:
+- Configure Claude Code hooks in `~/.claude/settings.json`
+- Download curated sounds to `~/.claude/sounds/`
+- Install the sound listener script
 
-### 4. Enable the sound watcher
+### 3. Restart your terminal
 
-Add to your `~/.zshrc`:
+The sound watcher will start automatically in new terminal sessions.
 
-```bash
-source /path/to/starcraft-claude/.claude-sounds.zsh
-```
-
-Restart your terminal or run `source ~/.zshrc`.
+That's it! You should now hear StarCraft sounds during your Claude Code sessions.
 
 ## Usage
 
@@ -114,23 +52,80 @@ claude_sound_watcher_start    # Start the watcher
 claude_sound_watcher_restart  # Restart the watcher
 ```
 
+## Customizing Sounds
+
+The web app at http://localhost:5173 lets you:
+
+- **Browse** - Explore Protoss, Terran, and Zerg unit quotes
+- **Preview** - Listen before downloading
+- **Customize** - Add/remove quotes from the recommended setup
+- **Sync** - Click "Sync to .claude" to update your sounds folder
+
+| Folder | Event |
+|--------|-------|
+| `start` | Session starts |
+| `userpromptsubmit` | You submit a prompt |
+| `done` | Claude finishes responding |
+| `precompact` | Before context compaction |
+
 ## Configuration
 
-Override defaults via environment variables:
+Override defaults via environment variables in your `~/.zshrc`:
 
 ```bash
 export CLAUDE_SOUNDS_DIR="$HOME/.claude/sounds"  # Sound files location
 export CLAUDE_SOUND_VOLUME=50                     # Volume 0-100 (macOS only)
 ```
 
-## Sound Suggestions
+## Advanced Setup
 
-| Event | Suggested Unit Quotes |
-|-------|----------------------|
-| Session start | Probe "I am ready", Zealot "My life for Aiur" |
-| Prompt submit | Stalker "I'm ready to go", Sentry "Yes commander" |
-| Task complete | Archon "The merging is complete", Carrier "Carrier has arrived" |
-| Pre-compact | Void Ray "Channel the void", High Templar "My mind is clear" |
+If you prefer to configure things manually instead of using One-Click Setup:
+
+### Configure Claude Code hooks
+
+Add this to `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear",
+        "hooks": [{ "type": "command", "command": "touch ~/.claude/.claude-start" }]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [{ "type": "command", "command": "touch ~/.claude/.claude-prompt" }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "touch ~/.claude/.claude-done" }]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [{ "type": "command", "command": "touch ~/.claude/.claude-compact" }]
+      }
+    ]
+  }
+}
+```
+
+### Enable the sound watcher
+
+Copy the script and add to your `~/.zshrc`:
+
+```bash
+cp sc2-downloader/claude-sounds.zsh ~/.claude-sounds.zsh
+echo 'source ~/.claude-sounds.zsh' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Download sounds manually
+
+Use the web app to browse and download individual sounds, or use "Download ZIP" from the settings menu to get all recommended sounds at once.
 
 ## Project Structure
 
