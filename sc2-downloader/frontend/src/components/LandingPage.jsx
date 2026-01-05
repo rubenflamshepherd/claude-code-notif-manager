@@ -16,6 +16,7 @@ export default function LandingPage({ onNavigate }) {
   const [isSettingUp, setIsSettingUp] = useState(false);
   const [currentStep, setCurrentStep] = useState(null);
   const [setupResult, setSetupResult] = useState(null);
+  const [isToggling, setIsToggling] = useState(false);
 
   const refreshStatus = async () => {
     try {
@@ -38,6 +39,18 @@ export default function LandingPage({ onNavigate }) {
   useEffect(() => {
     refreshStatus();
   }, []);
+
+  const handleToggleSounds = async () => {
+    setIsToggling(true);
+    try {
+      await fetch('http://localhost:3001/api/toggle-sounds', { method: 'POST' });
+      await refreshStatus();
+    } catch (error) {
+      console.error('Toggle failed:', error);
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   const handleOneClickSetup = async () => {
     setIsSettingUp(true);
@@ -222,6 +235,37 @@ export default function LandingPage({ onNavigate }) {
             }`} />
             <span className="text-sm text-gray-400">Listener</span>
           </div>
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${
+              listenerStatus?.inShellConfig ? 'bg-green-400' : 'bg-gray-600'
+            }`} />
+            <span className="text-sm text-gray-400">
+              {listenerStatus?.shellConfigs?.zshrc ? '.zshrc' :
+               listenerStatus?.shellConfigs?.bashrc ? '.bashrc' :
+               listenerStatus?.shellConfigs?.bash_profile ? '.bash_profile' :
+               'Shell Config'}
+            </span>
+          </div>
+          {listenerStatus?.scriptInstalled && (
+            <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-700">
+              <button
+                onClick={handleToggleSounds}
+                disabled={isToggling}
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                  listenerStatus?.running ? 'bg-green-500' : 'bg-gray-600'
+                } ${isToggling ? 'opacity-50' : ''}`}
+              >
+                <span
+                  className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                    listenerStatus?.running ? 'left-6' : 'left-1'
+                  }`}
+                />
+              </button>
+              <span className="text-sm text-gray-400">
+                {isToggling ? 'Toggling...' : listenerStatus?.running ? 'Sounds On' : 'Sounds Off'}
+              </span>
+            </div>
+          )}
         </div>
         {setupResult && (
           <div className={`mt-4 px-4 py-2 rounded-lg text-sm ${
