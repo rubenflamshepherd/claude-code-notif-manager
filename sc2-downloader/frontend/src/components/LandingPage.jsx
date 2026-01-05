@@ -235,6 +235,17 @@ export default function LandingPage({ onNavigate }) {
             }`} />
             <span className="text-sm text-gray-400">Listener</span>
           </div>
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${
+              listenerStatus?.inShellConfig ? 'bg-green-400' : 'bg-gray-600'
+            }`} />
+            <span className="text-sm text-gray-400">
+              {listenerStatus?.shellConfigs?.zshrc ? '.zshrc' :
+               listenerStatus?.shellConfigs?.bashrc ? '.bashrc' :
+               listenerStatus?.shellConfigs?.bash_profile ? '.bash_profile' :
+               'Shell Config'}
+            </span>
+          </div>
           {listenerStatus?.scriptInstalled && (
             <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-700">
               <button
