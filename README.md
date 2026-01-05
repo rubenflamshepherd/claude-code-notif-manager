@@ -108,11 +108,14 @@ Restart your terminal or run `source ~/.zshrc`.
 The watcher starts automatically when you open a new terminal. Use these commands to manage it:
 
 ```bash
+cst                           # Toggle sounds on/off (remembers preference)
 claude_sound_watcher_status   # Check if running
 claude_sound_watcher_stop     # Stop the watcher
 claude_sound_watcher_start    # Start the watcher
 claude_sound_watcher_restart  # Restart the watcher
 ```
+
+The `cst` alias (claude sounds toggle) is the quickest way to turn sounds on or off. Your preference persists across terminal sessions.
 
 ## Configuration
 

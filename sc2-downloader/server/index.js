@@ -567,6 +567,65 @@ app.get('/api/listener-status', async (req, res) => {
   });
 });
 
+// Toggle sounds on/off (mirrors cst command)
+app.post('/api/toggle-sounds', async (req, res) => {
+  const scriptPath = join(homedir(), '.claude-sounds.zsh');
+  const pidFile = join(homedir(), '.claude_watcher.pid');
+  const enabledFile = join(homedir(), '.claude_sounds_enabled');
+
+  if (!existsSync(scriptPath)) {
+    return res.status(400).json({ error: 'Sound listener script not installed' });
+  }
+
+  try {
+    // Check if currently running
+    let isRunning = false;
+    if (existsSync(pidFile)) {
+      try {
+        const pid = await readFile(pidFile, 'utf-8');
+        execSync(`kill -0 ${pid.trim()}`, { stdio: 'pipe' });
+        isRunning = true;
+      } catch {
+        isRunning = false;
+      }
+    }
+
+    if (isRunning) {
+      // Stop: kill processes and update state
+      execSync(`zsh -c 'source ${scriptPath} && claude_sound_watcher_stop'`, { stdio: 'pipe' });
+      await writeFile(enabledFile, '0');
+    } else {
+      // Start: use spawn with detached to properly background
+      const { spawn } = await import('child_process');
+      const child = spawn('zsh', ['-c', `source ${scriptPath} && claude_sound_watcher_start`], {
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.unref();
+      // Give it a moment to write the PID file
+      await new Promise(r => setTimeout(r, 300));
+      await writeFile(enabledFile, '1');
+    }
+
+    // Check new state
+    let running = false;
+    if (existsSync(pidFile)) {
+      try {
+        const pid = await readFile(pidFile, 'utf-8');
+        execSync(`kill -0 ${pid.trim()}`, { stdio: 'pipe' });
+        running = true;
+      } catch {
+        running = false;
+      }
+    }
+
+    res.json({ success: true, running });
+  } catch (error) {
+    console.error('Toggle sounds error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
   console.log('');
