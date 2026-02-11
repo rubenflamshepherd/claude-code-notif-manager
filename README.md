@@ -98,7 +98,7 @@ Open http://localhost:5173, browse units, and select quotes. Use the dropdown to
 Add to your `~/.zshrc`:
 
 ```bash
-source /path/to/starcraft-claude/.claude-sounds.zsh
+source /path/to/starcraft-claude/sc2-downloader/claude-sounds.zsh
 ```
 
 Restart your terminal or run `source ~/.zshrc`.
@@ -139,8 +139,8 @@ export CLAUDE_SOUND_VOLUME=50                     # Volume 0-100 (macOS only)
 
 ```
 starcraft-claude/
-├── .claude-sounds.zsh   # Watcher script (source in .zshrc)
 └── sc2-downloader/      # Web app to browse/download SC2 sounds
+    ├── claude-sounds.zsh # Watcher script (source in .zshrc)
     ├── frontend/        # React + Vite UI
     ├── server/          # Express backend for MP3 conversion
     └── scripts/         # Wiki scraper
