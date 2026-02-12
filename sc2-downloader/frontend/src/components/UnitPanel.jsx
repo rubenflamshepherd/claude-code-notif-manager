@@ -77,7 +77,7 @@ function SortableRecommendation({ rec, hook, hookNames, onMoveRecommendation, on
   );
 }
 
-export default function UnitPanel({ unit, race = 'protoss', sections = [], quoteSearchQuery = '', isHomeView = false, isRecommendedView = false, recommendedSetup = null, onRemoveRecommendation = null, onMoveRecommendation = null, onReorderRecommendations = null, onAddRecommendation = null, onImportSetup = null, onNavigate = null, selectedGame = null }) {
+export default function UnitPanel({ unit, race = 'protoss', sections = [], quoteSearchQuery = '', isHomeView = false, isRecommendedView = false, recommendedSetup = null, onRemoveRecommendation = null, onMoveRecommendation = null, onReorderRecommendations = null, onAddRecommendation = null, onImportSetup = null, onNavigate = null, selectedGame = null, lists = [], activeListId = 'default', onCreateList = null, onDeleteList = null, onRenameList = null, onSetActiveList = null }) {
   // Use unit's race for styling when available (for "all" tab), otherwise use selected race
   const effectiveRace = unit?.race || race;
   const primaryClass = getFactionStyles(effectiveRace).primaryClass;
@@ -195,7 +195,9 @@ export default function UnitPanel({ unit, race = 'protoss', sections = [], quote
   };
 
   const handleExportSetup = () => {
-    const json = JSON.stringify(recommendedSetup, null, 2);
+    // Export in backward-compatible { hooks } format
+    const exportData = { hooks: recommendedSetup?.hooks || [] };
+    const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -290,9 +292,60 @@ export default function UnitPanel({ unit, race = 'protoss', sections = [], quote
         <div className="flex-1 overflow-y-auto p-6">
           <div className="mb-6 flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-amber-400 mb-2">Recommended Setup</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <select
+                  value={activeListId}
+                  onChange={(e) => onSetActiveList?.(e.target.value)}
+                  className="text-2xl font-bold text-amber-400 bg-transparent border-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-400/50 rounded"
+                >
+                  {lists.map(list => (
+                    <option key={list.id} value={list.id} className="bg-gray-900 text-amber-400">
+                      {list.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => {
+                    const name = window.prompt('New list name:');
+                    if (name?.trim()) onCreateList?.(name.trim());
+                  }}
+                  className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
+                  title="Create new list"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => {
+                    const currentName = lists.find(l => l.id === activeListId)?.name || '';
+                    const newName = window.prompt('Rename list:', currentName);
+                    if (newName?.trim() && newName.trim() !== currentName) onRenameList?.(activeListId, newName.trim());
+                  }}
+                  className="p-1.5 rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-700 transition-colors"
+                  title="Rename list"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Delete "${lists.find(l => l.id === activeListId)?.name}"? This cannot be undone.`)) {
+                      onDeleteList?.(activeListId);
+                    }
+                  }}
+                  disabled={activeListId === 'default'}
+                  className="p-1.5 rounded-lg bg-gray-700/50 text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-gray-700/50 disabled:hover:text-gray-300"
+                  title={activeListId === 'default' ? 'Cannot delete default list' : 'Delete list'}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
               <p className="text-gray-400 text-sm">
-                Curated SC2 quotes that work well with Claude Code hooks. Click to preview, download to use.
+                {hooks.reduce((sum, h) => sum + h.recommendations.length, 0)} sounds across {hooks.length} hooks. Click to preview, download to use.
               </p>
             </div>
             <div className="flex items-center gap-2 relative">
