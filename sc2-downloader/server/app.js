@@ -367,17 +367,25 @@ function getShellConfig() {
   return { shell: 'zsh', configPath: join(homedir(), '.zshrc'), configName: '.zshrc' };
 }
 
+// Get shell-appropriate script info
+function getScriptInfo() {
+  const { shell } = getShellConfig();
+  const ext = shell === 'bash' ? 'bash' : 'zsh';
+  return { shell, ext, scriptFilename: `claude-sounds.${ext}`, sourceName: `.claude-sounds.${ext}` };
+}
+
 // Setup the sound listener script
 app.post('/api/setup-listener', async (req, res) => {
-  const scriptSource = join(__dirname, '..', 'claude-sounds.zsh');
-  const scriptDest = join(homedir(), '.claude-sounds.zsh');
-  const { shell, configPath, configName } = getShellConfig();
-  const sourceLine = '\n# Claude Code sound notifications\nsource ~/.claude-sounds.zsh\n';
+  const { shell, ext, scriptFilename, sourceName } = getScriptInfo();
+  const scriptSource = join(__dirname, '..', scriptFilename);
+  const scriptDest = join(homedir(), sourceName);
+  const { configPath, configName } = getShellConfig();
+  const sourceLine = `\n# Claude Code sound notifications\nsource ~/${sourceName}\n`;
 
   try {
     // Check if source script exists
     if (!existsSync(scriptSource)) {
-      return res.status(404).json({ error: 'claude-sounds.zsh not found in project' });
+      return res.status(404).json({ error: `${scriptFilename} not found in project` });
     }
 
     // Copy script to home directory
@@ -389,7 +397,7 @@ app.post('/api/setup-listener', async (req, res) => {
     let alreadyAdded = false;
     if (existsSync(configPath)) {
       configContent = await readFile(configPath, 'utf-8');
-      alreadyAdded = configContent.includes('.claude-sounds.zsh');
+      alreadyAdded = configContent.includes(sourceName);
     }
 
     // Add to shell config if not present
@@ -411,17 +419,12 @@ app.post('/api/setup-listener', async (req, res) => {
     let started = false;
     if (fswatchInstalled) {
       try {
-        execSync(`zsh -c 'source ${scriptDest}'`, { stdio: 'pipe' });
+        execSync(`${shell} -c 'source ${scriptDest}'`, { stdio: 'pipe' });
         started = true;
       } catch {
         started = false;
       }
     }
-
-    // Warn if using bash (script has zsh-specific syntax)
-    const bashWarning = shell === 'bash'
-      ? ' Note: The listener script uses zsh syntax. You may need zsh installed or a bash-compatible version.'
-      : '';
 
     res.json({
       success: true,
@@ -433,8 +436,8 @@ app.post('/api/setup-listener', async (req, res) => {
       fswatchInstalled,
       started,
       message: fswatchInstalled
-        ? (started ? 'Listener setup complete and running!' : `Listener installed. Restart your terminal to activate.${bashWarning}`)
-        : `Listener installed. Install fswatch (brew install fswatch) and restart your terminal.${bashWarning}`
+        ? (started ? 'Listener setup complete and running!' : 'Listener installed. Restart your terminal to activate.')
+        : 'Listener installed. Install fswatch (brew install fswatch) and restart your terminal.'
     });
   } catch (error) {
     console.error('Setup error:', error);
@@ -555,18 +558,19 @@ const SHELL_CONFIGS = [
 
 // Get listener status
 app.get('/api/listener-status', async (req, res) => {
-  const scriptDest = join(homedir(), '.claude-sounds.zsh');
+  const { sourceName } = getScriptInfo();
+  const scriptDest = join(homedir(), sourceName);
   const pidFile = join(homedir(), '.claude_watcher.pid');
 
   const scriptInstalled = existsSync(scriptDest);
 
-  // Check all shell config files
+  // Check all shell config files for either .zsh or .bash source lines
   const shellConfigs = {};
   let inShellConfig = false;
   for (const config of SHELL_CONFIGS) {
     if (existsSync(config.path)) {
       const content = await readFile(config.path, 'utf-8');
-      const hasSource = content.includes('.claude-sounds.zsh');
+      const hasSource = content.includes('.claude-sounds.zsh') || content.includes('.claude-sounds.bash');
       shellConfigs[config.name] = hasSource;
       if (hasSource) inShellConfig = true;
     } else {
@@ -605,7 +609,8 @@ app.get('/api/listener-status', async (req, res) => {
 
 // Toggle sounds on/off (mirrors cst command)
 app.post('/api/toggle-sounds', async (req, res) => {
-  const scriptPath = join(homedir(), '.claude-sounds.zsh');
+  const { shell, sourceName } = getScriptInfo();
+  const scriptPath = join(homedir(), sourceName);
   const pidFile = join(homedir(), '.claude_watcher.pid');
   const enabledFile = join(homedir(), '.claude_sounds_enabled');
 
@@ -628,12 +633,12 @@ app.post('/api/toggle-sounds', async (req, res) => {
 
     if (isRunning) {
       // Stop: kill processes and update state
-      execSync(`zsh -c 'source ${scriptPath} && claude_sound_watcher_stop'`, { stdio: 'pipe' });
+      execSync(`${shell} -c 'source ${scriptPath} && claude_sound_watcher_stop'`, { stdio: 'pipe' });
       await writeFile(enabledFile, '0');
     } else {
       // Start: use spawn with detached to properly background
       const { spawn } = await import('child_process');
-      const child = spawn('zsh', ['-c', `source ${scriptPath} && claude_sound_watcher_start`], {
+      const child = spawn(shell, ['-c', `source ${scriptPath} && claude_sound_watcher_start`], {
         detached: true,
         stdio: 'ignore'
       });
