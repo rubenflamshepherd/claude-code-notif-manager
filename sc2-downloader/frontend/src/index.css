@@ -25,6 +25,11 @@
   --color-horde-secondary: #a3e635;
   --color-horde-dark: #2a1215;
   --color-horde-darker: #160a0c;
+
+  --color-european-primary: #d4a017;
+  --color-european-secondary: #3b82f6;
+  --color-european-dark: #1a1610;
+  --color-european-darker: #0f0e09;
 }
 
 :root {

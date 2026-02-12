@@ -6,6 +6,7 @@
     "scrape": "node scrape.js",
     "scrape:sc2": "node scrape.js sc2",
     "scrape:wc2": "node scrape.js wc2",
+    "scrape:aoe3": "node scrape.js aoe3",
     "scrape:legacy": "node scrape-wiki.js"
   },
   "dependencies": {

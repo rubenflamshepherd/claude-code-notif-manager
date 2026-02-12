@@ -23,6 +23,7 @@ function getInitialRecommendedSetup() {
 const gameDataLoaders = {
   sc2: () => import('./data/games/sc2.json'),
   wc2: () => import('./data/games/wc2.json'),
+  aoe3: () => import('./data/games/aoe3.json'),
 };
 
 function App() {
