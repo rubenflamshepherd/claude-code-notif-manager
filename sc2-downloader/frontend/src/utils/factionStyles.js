@@ -84,6 +84,22 @@ const FACTION_STYLES = {
     secondaryHover: 'hover:bg-horde-secondary/40',
     badgeBg: 'bg-horde-primary/20',
   },
+  european: {
+    bgClass: 'bg-european-dark',
+    darkerBgClass: 'bg-european-darker',
+    borderClass: 'border-european-primary/20',
+    primaryClass: 'text-european-primary',
+    inputBg: 'bg-european-darker',
+    inputBorder: 'border-european-primary/30',
+    inputFocus: 'focus:border-european-primary',
+    selectedBg: 'bg-european-primary/20',
+    primaryBg: 'bg-european-primary/20',
+    primaryHover: 'hover:bg-european-primary/40',
+    secondaryClass: 'text-european-secondary',
+    secondaryBg: 'bg-european-secondary/20',
+    secondaryHover: 'hover:bg-european-secondary/40',
+    badgeBg: 'bg-european-primary/20',
+  },
 };
 
 const DEFAULT_STYLES = {

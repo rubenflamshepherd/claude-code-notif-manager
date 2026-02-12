@@ -65,6 +65,24 @@
         }
       ],
       "attribution": "Audio from Warcraft Wiki"
+    },
+    {
+      "id": "aoe3",
+      "name": "Age of Empires III",
+      "dataFile": "aoe3.json",
+      "factions": [
+        {
+          "id": "european",
+          "name": "European",
+          "colors": {
+            "primary": "#d4a017",
+            "secondary": "#3b82f6",
+            "dark": "#1a1610",
+            "darker": "#0f0e09"
+          }
+        }
+      ],
+      "attribution": "Audio from Age of Empires Wiki"
     }
   ]
 }
