@@ -4,19 +4,31 @@ import UnitPanel from './components/UnitPanel';
 import gamesRegistry from './data/games.json';
 import initialRecommendedSetup from './data/recommendedSetup.json';
 import { getFactionStyles } from './utils/factionStyles';
+import {
+  migrateToMultiList,
+  getActiveList,
+  addRecommendation,
+  removeRecommendation,
+  moveRecommendation,
+  reorderRecommendations,
+  createList,
+  deleteList,
+  renameList,
+  setActiveList,
+} from './utils/listManager';
 
 const STORAGE_KEY = 'sc2-quotes-recommended-setup';
 
-function getInitialRecommendedSetup() {
+function getInitialListsState() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
-      return JSON.parse(saved);
+      return migrateToMultiList(JSON.parse(saved), initialRecommendedSetup);
     } catch {
-      return initialRecommendedSetup;
+      return migrateToMultiList(initialRecommendedSetup, initialRecommendedSetup);
     }
   }
-  return initialRecommendedSetup;
+  return migrateToMultiList(initialRecommendedSetup, initialRecommendedSetup);
 }
 
 // Map of lazy-loading functions for each game's data file
@@ -32,7 +44,11 @@ function App() {
   const [selectedView, setSelectedView] = useState('home');
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [quoteSearchQuery, setQuoteSearchQuery] = useState('');
-  const [recommendedSetup, setRecommendedSetup] = useState(getInitialRecommendedSetup);
+  const [listsState, setListsState] = useState(getInitialListsState);
+
+  const activeList = getActiveList(listsState);
+  // Derive recommendedSetup from activeList for backward compatibility with child components
+  const recommendedSetup = activeList;
 
   // Build faction list from selected game
   const factions = selectedGame.factions.map(f => f.id);
@@ -55,67 +71,51 @@ function App() {
   }, [selectedGame.id]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(recommendedSetup));
-  }, [recommendedSetup]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(listsState));
+  }, [listsState]);
 
   const handleRemoveRecommendation = (hookName, audioUrl) => {
-    setRecommendedSetup(prev => ({
-      ...prev,
-      hooks: prev.hooks.map(hook =>
-        hook.name === hookName
-          ? { ...hook, recommendations: hook.recommendations.filter(rec => rec.audioUrl !== audioUrl) }
-          : hook
-      )
-    }));
+    setListsState(prev => removeRecommendation(prev, hookName, audioUrl));
   };
 
   const handleMoveRecommendation = (fromHookName, toHookName, recommendation) => {
-    setRecommendedSetup(prev => ({
-      ...prev,
-      hooks: prev.hooks.map(hook => {
-        if (hook.name === fromHookName) {
-          // Remove from source hook
-          return { ...hook, recommendations: hook.recommendations.filter(rec => rec.audioUrl !== recommendation.audioUrl) };
-        }
-        if (hook.name === toHookName) {
-          // Add to target hook (avoid duplicates)
-          const exists = hook.recommendations.some(rec => rec.audioUrl === recommendation.audioUrl);
-          if (exists) return hook;
-          return { ...hook, recommendations: [...hook.recommendations, recommendation] };
-        }
-        return hook;
-      })
-    }));
+    setListsState(prev => moveRecommendation(prev, fromHookName, toHookName, recommendation));
   };
 
   const handleReorderRecommendations = (hookName, oldIndex, newIndex) => {
-    setRecommendedSetup(prev => ({
-      ...prev,
-      hooks: prev.hooks.map(hook => {
-        if (hook.name !== hookName) return hook;
-        const newRecs = [...hook.recommendations];
-        const [removed] = newRecs.splice(oldIndex, 1);
-        newRecs.splice(newIndex, 0, removed);
-        return { ...hook, recommendations: newRecs };
-      })
-    }));
+    setListsState(prev => reorderRecommendations(prev, hookName, oldIndex, newIndex));
   };
 
   const handleAddRecommendation = (hookName, recommendation) => {
-    setRecommendedSetup(prev => ({
-      ...prev,
-      hooks: prev.hooks.map(hook => {
-        if (hook.name !== hookName) return hook;
-        // Avoid duplicates
-        const exists = hook.recommendations.some(rec => rec.audioUrl === recommendation.audioUrl);
-        if (exists) return hook;
-        return { ...hook, recommendations: [...hook.recommendations, recommendation] };
-      })
-    }));
+    setListsState(prev => addRecommendation(prev, hookName, recommendation));
   };
 
   const handleImportSetup = (newSetup) => {
-    setRecommendedSetup(newSetup);
+    // Import replaces the active list's hooks (backward compatible format: { hooks: [...] })
+    setListsState(prev => ({
+      ...prev,
+      lists: prev.lists.map(list =>
+        list.id === getActiveList(prev).id
+          ? { ...list, hooks: newSetup.hooks }
+          : list
+      ),
+    }));
+  };
+
+  const handleCreateList = (name) => {
+    setListsState(prev => createList(prev, name));
+  };
+
+  const handleDeleteList = (listId) => {
+    setListsState(prev => deleteList(prev, listId));
+  };
+
+  const handleRenameList = (listId, newName) => {
+    setListsState(prev => renameList(prev, listId, newName));
+  };
+
+  const handleSetActiveList = (listId) => {
+    setListsState(prev => setActiveList(prev, listId));
   };
 
   const handleGameChange = (gameId) => {
@@ -175,6 +175,8 @@ function App() {
         selectedGame={selectedGame}
         games={gamesRegistry.games}
         onGameChange={handleGameChange}
+        lists={listsState.lists}
+        activeListId={listsState.activeListId}
       />
       <UnitPanel
         unit={selectedUnit}
@@ -191,6 +193,12 @@ function App() {
         onImportSetup={handleImportSetup}
         onNavigate={handleViewChange}
         selectedGame={selectedGame}
+        lists={listsState.lists}
+        activeListId={listsState.activeListId}
+        onCreateList={handleCreateList}
+        onDeleteList={handleDeleteList}
+        onRenameList={handleRenameList}
+        onSetActiveList={handleSetActiveList}
       />
     </div>
   );
