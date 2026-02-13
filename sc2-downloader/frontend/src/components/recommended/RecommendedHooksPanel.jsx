@@ -1,6 +1,7 @@
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Button } from '../../catalyst/button';
 import QuoteLine from '../QuoteLine';
 import { getFactionStyles } from '../../utils/factionStyles';
 
@@ -31,26 +32,26 @@ function SortableRecommendation({ rec, hook, hookNames, onMoveRecommendation, on
         </span>
         <div className="ml-auto flex items-center gap-1 opacity-0 transition-opacity group-hover/rec:opacity-100">
           {hookNames.filter((name) => name !== hook.name).map((targetHook) => (
-            <button
+            <Button
               key={targetHook}
-              type="button"
+              color="amber"
               onClick={() => onMoveRecommendation?.(hook.name, targetHook, rec)}
-              className="rounded bg-amber-500/20 px-2 py-0.5 text-xs text-amber-400 hover:bg-amber-500/40"
+              className="!rounded !px-2 !py-0.5 !text-xs"
               title={`Move to ${targetHook}`}
             >
               {targetHook}
-            </button>
+            </Button>
           ))}
-          <button
-            type="button"
+          <Button
+            color="red"
             onClick={() => onRemoveRecommendation?.(hook.name, rec.audioUrl)}
-            className="rounded p-1 hover:bg-red-500/20"
+            className="!rounded !p-1"
             title="Remove from recommendations"
           >
             <svg className="h-4 w-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </button>
+          </Button>
         </div>
       </div>
       <QuoteLine quote={{ text: rec.text, audioUrl: rec.audioUrl }} race={rec.race} unitName={rec.unit} categoryName={hook.name} />

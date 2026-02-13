@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Button } from '../catalyst/button';
 import { useSelection } from '../contexts/SelectionContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { getFactionStyles } from '../utils/factionStyles';
@@ -32,8 +33,6 @@ export default function QuoteLine({ quote, race = 'protoss', unitName = '', cate
   const primaryBg = styles.primaryBg;
   const primaryHoverBg = styles.primaryHover;
   const secondaryClass = styles.secondaryClass;
-  const secondaryBg = styles.secondaryBg;
-  const secondaryHoverBg = styles.secondaryHover;
 
   // Proxy audio through backend to handle CORS and missing files
   const proxyUrl = `http://localhost:3001/api/audio?url=${encodeURIComponent(quote.audioUrl)}`;
@@ -137,13 +136,14 @@ export default function QuoteLine({ quote, race = 'protoss', unitName = '', cate
         } transition-opacity`}
       />
 
-      <button
+      <Button
+        plain
         onClick={handlePlay}
         disabled={hasError}
-        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+        className={`!flex !h-8 !w-8 !items-center !justify-center !rounded-full !p-0 ${
           hasError
-            ? 'bg-red-500/20 cursor-not-allowed'
-            : `${primaryBg} ${primaryHoverBg}`
+            ? '!bg-red-500/20'
+            : `${primaryBg} ${primaryHoverBg} !text-current`
         }`}
         title={hasError ? 'Audio unavailable' : isPlaying ? 'Stop' : 'Play'}
       >
@@ -161,29 +161,31 @@ export default function QuoteLine({ quote, race = 'protoss', unitName = '', cate
             <polygon points="5,3 19,12 5,21" />
           </svg>
         )}
-      </button>
+      </Button>
 
       <span className="text-gray-300 text-sm">{quote.text}</span>
 
       {availableHooks.length > 0 && (
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {availableHooks.map(hook => (
-            <button
+            <Button
               key={hook.name}
+              color="amber"
               onClick={() => handleAddToHook(hook.name)}
-              className="px-2 py-0.5 text-xs rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/40 transition-colors"
+              className="!rounded !px-2 !py-0.5 !text-xs"
               title={`Add to ${hook.name}`}
             >
               +{hook.name}
-            </button>
+            </Button>
           ))}
         </div>
       )}
 
-      <button
+      <Button
+        color="sky"
         onClick={handleDownload}
         disabled={isDownloading}
-        className={`flex-shrink-0 w-8 h-8 rounded ${secondaryBg} ${secondaryHoverBg} flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50`}
+        className="!flex !h-8 !w-8 !items-center !justify-center !rounded !p-0 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50"
         title="Download MP3"
       >
         {isDownloading ? (
@@ -196,7 +198,7 @@ export default function QuoteLine({ quote, race = 'protoss', unitName = '', cate
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
         )}
-      </button>
+      </Button>
     </div>
   );
 }

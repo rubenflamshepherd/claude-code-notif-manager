@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react';
+import { Button } from '../../catalyst/button';
+import { Input } from '../../catalyst/input';
+import { Listbox, ListboxLabel, ListboxOption } from '../../catalyst/listbox';
 import ModalDialog from '../ui/ModalDialog';
 
 export default function SetupActionsPanel({
@@ -58,49 +61,39 @@ export default function SetupActionsPanel({
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-2 flex items-center gap-2">
-            <select
+            <Listbox
               value={activeListId}
-              onChange={(e) => onSetActiveList?.(e.target.value)}
-              className="rounded-lg border border-amber-500/40 bg-transparent px-2 py-1 text-xl font-semibold text-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+              onChange={(value) => onSetActiveList?.(value)}
+              className="min-w-56 text-amber-200"
             >
               {lists.map((list) => (
-                <option key={list.id} value={list.id} className="bg-slate-900 text-amber-300">
-                  {list.name}
-                </option>
+                <ListboxOption key={list.id} value={list.id}>
+                  <ListboxLabel>{list.name}</ListboxLabel>
+                </ListboxOption>
               ))}
-            </select>
+            </Listbox>
 
-            <button
-              type="button"
-              onClick={openCreateDialog}
-              className="rounded-lg bg-amber-500/20 p-1.5 text-amber-300 hover:bg-amber-500/30"
-              title="Create list"
-            >
+            <Button color="amber" onClick={openCreateDialog} title="Create list" className="!p-1.5">
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-            </button>
-            <button
-              type="button"
-              onClick={openRenameDialog}
-              className="rounded-lg bg-white/10 p-1.5 text-slate-300 hover:bg-white/20"
-              title="Rename list"
-            >
+            </Button>
+            <Button color="white" outline onClick={openRenameDialog} title="Rename list" className="!p-1.5">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              color="red"
               onClick={() => setDialogMode('delete')}
               disabled={activeListId === 'default'}
-              className="rounded-lg bg-white/10 p-1.5 text-slate-300 transition-colors hover:bg-red-500/20 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+              className="!p-1.5"
               title={activeListId === 'default' ? 'Default list cannot be deleted' : 'Delete list'}
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-            </button>
+            </Button>
           </div>
 
           <p className="text-sm text-slate-400">
@@ -109,27 +102,27 @@ export default function SetupActionsPanel({
         </div>
 
         <div className="relative flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            color="green"
             onClick={onSaveToSounds}
             disabled={isSaving}
-            className="flex items-center gap-2 rounded-lg bg-green-500/20 px-4 py-2 text-green-300 transition-colors hover:bg-green-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+            className="!px-4 !py-2"
           >
             {isSaving ? 'Saving...' : 'Sync to .claude'}
-          </button>
+          </Button>
 
           <div className="relative">
-            <button
-              type="button"
+            <Button
+              outline
               onClick={() => setShowSettingsMenu((prev) => !prev)}
-              className="rounded-lg bg-white/10 p-2 text-slate-300 hover:bg-white/20"
+              className="!p-2"
               title="More options"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-            </button>
+            </Button>
 
             {showSettingsMenu ? (
               <>
@@ -189,24 +182,19 @@ export default function SetupActionsPanel({
         onClose={closeDialog}
         footer={(
           <>
-            <button type="button" onClick={closeDialog} className="rounded-md border border-white/15 px-3 py-1.5 text-slate-300 hover:bg-white/10">
+            <Button color="white" outline onClick={closeDialog}>
               Cancel
-            </button>
-            <button
-              type="button"
-              onClick={submitDialog}
-              className="rounded-md bg-amber-500/25 px-3 py-1.5 text-amber-200 hover:bg-amber-500/35"
-            >
+            </Button>
+            <Button color="amber" onClick={submitDialog}>
               Save
-            </button>
+            </Button>
           </>
         )}
       >
         <label className="mb-2 block text-xs uppercase tracking-wide text-slate-400">Name</label>
-        <input
+        <Input
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400/50"
           placeholder="List name"
           autoFocus
         />
@@ -218,19 +206,18 @@ export default function SetupActionsPanel({
         onClose={closeDialog}
         footer={(
           <>
-            <button type="button" onClick={closeDialog} className="rounded-md border border-white/15 px-3 py-1.5 text-slate-300 hover:bg-white/10">
+            <Button color="white" outline onClick={closeDialog}>
               Cancel
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              color="red"
               onClick={() => {
                 onDeleteList?.(activeListId);
                 closeDialog();
               }}
-              className="rounded-md bg-red-500/25 px-3 py-1.5 text-red-100 hover:bg-red-500/35"
             >
               Delete
-            </button>
+            </Button>
           </>
         )}
       >

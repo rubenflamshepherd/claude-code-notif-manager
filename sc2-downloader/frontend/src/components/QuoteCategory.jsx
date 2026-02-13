@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Button } from '../catalyst/button';
 import QuoteLine from './QuoteLine';
 import { useSelection } from '../contexts/SelectionContext';
 import { getFactionStyles } from '../utils/factionStyles';
@@ -10,9 +11,6 @@ export default function QuoteCategory({ category, race = 'protoss', unitName = '
   const styles = getFactionStyles(race);
   const primaryClass = styles.primaryClass;
   const borderClass = styles.borderClass;
-  const secondaryBg = styles.secondaryBg;
-  const secondaryHoverBg = styles.secondaryHover;
-
   const allSelected = useMemo(() => {
     return category.quotes.length > 0 && category.quotes.every(q => isSelected(q));
   }, [category.quotes, isSelected]);
@@ -46,14 +44,15 @@ export default function QuoteCategory({ category, race = 'protoss', unitName = '
           <span className={`${primaryClass} font-medium`}>{category.name}</span>
           <span className="text-gray-500 text-sm">({category.quotes.length})</span>
         </button>
-        <button
+        <Button
+          plain
           onClick={handleSelectAll}
-          className={`text-xs px-2 py-1 rounded ${secondaryBg} ${secondaryHoverBg} text-gray-300 transition-opacity ${
+          className={`!text-xs !px-2 !py-1 transition-opacity ${
             showSelectAll ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
           }`}
         >
           {allSelected ? 'Deselect All' : 'Select All'}
-        </button>
+        </Button>
       </div>
 
       {isExpanded && (

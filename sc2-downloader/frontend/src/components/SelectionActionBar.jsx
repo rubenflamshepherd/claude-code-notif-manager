@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { Button } from '../catalyst/button';
+import { Listbox, ListboxLabel, ListboxOption } from '../catalyst/listbox';
 import { useSelection } from '../contexts/SelectionContext';
 import { useNotifications } from '../contexts/NotificationContext';
 
@@ -128,38 +130,42 @@ export default function SelectionActionBar() {
   return (
     <div className="surface-panel fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-xl px-4 py-3 shadow-2xl">
       <span className="text-sm text-slate-300">{selectedCount} quote{selectedCount === 1 ? '' : 's'} selected</span>
-      <button type="button" onClick={clearSelection} className="text-sm text-slate-400 hover:text-white">Clear</button>
+      <Button plain onClick={clearSelection} className="!px-2 !py-1 !text-sm !text-slate-300">
+        Clear
+      </Button>
 
       <div className="ml-1 flex items-center gap-2 border-l border-white/15 pl-3">
-        <select
+        <Listbox
           value={selectedFolder}
-          onChange={(e) => setSelectedFolder(e.target.value)}
-          className="rounded-md border border-white/15 bg-slate-900 px-2 py-1.5 text-sm text-slate-200"
+          onChange={(value) => setSelectedFolder(value)}
+          className="min-w-40"
         >
           {SOUND_FOLDERS.map((folder) => (
-            <option key={folder.value} value={folder.value}>{folder.label}</option>
+            <ListboxOption key={folder.value} value={folder.value}>
+              <ListboxLabel>{folder.label}</ListboxLabel>
+            </ListboxOption>
           ))}
-        </select>
+        </Listbox>
 
-        <button
-          type="button"
+        <Button
+          color="green"
           onClick={handleSaveToSounds}
           disabled={isSaving}
-          className="rounded-md bg-green-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-green-500 disabled:cursor-wait disabled:bg-green-800"
+          className="!px-3 !py-1.5 !text-sm"
           title={`Save to ~/.claude/sounds/${selectedFolder}/`}
         >
           {isSaving ? 'Saving...' : 'Save to Sounds'}
-        </button>
+        </Button>
       </div>
 
-      <button
-        type="button"
+      <Button
+        color="sky"
         onClick={handleBatchDownload}
         disabled={isDownloading}
-        className="rounded-md bg-sky-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-sky-500 disabled:cursor-wait disabled:bg-sky-800"
+        className="!px-3 !py-1.5 !text-sm"
       >
         {isDownloading ? 'Downloading...' : 'Download ZIP'}
-      </button>
+      </Button>
 
       {saveResult ? (
         <div className={`absolute -top-11 left-1/2 -translate-x-1/2 rounded px-3 py-1.5 text-xs ${saveResult.success ? 'bg-green-800 text-green-100' : 'bg-red-800 text-red-100'}`}>

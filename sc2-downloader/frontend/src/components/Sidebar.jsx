@@ -1,4 +1,20 @@
 import { useMemo, useState } from 'react';
+import {
+  Listbox,
+  ListboxLabel,
+  ListboxOption,
+} from '../catalyst/listbox';
+import { Button } from '../catalyst/button';
+import {
+  Sidebar as CatalystSidebar,
+  SidebarBody,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarItem,
+  SidebarLabel,
+  SidebarSection,
+} from '../catalyst/sidebar';
+import { Input } from '../catalyst/input';
 import { buildViewConfig, getFactionStyles } from '../utils/factionStyles';
 
 function Chevron({ expanded }) {
@@ -79,86 +95,88 @@ export default function Sidebar({
   const hasMultipleGames = games.length > 1;
 
   return (
-    <aside className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b border-white/10 px-4 py-4">
+    <CatalystSidebar className="text-zinc-100">
+      <SidebarHeader className="border-white/10">
         <h2 className={`mb-3 text-base font-semibold ${config.primaryClass}`}>Navigation</h2>
 
         {hasMultipleGames ? (
-          <select
+          <Listbox
             value={selectedGame.id}
-            onChange={(e) => onGameChange(e.target.value)}
-            className={`mb-3 w-full rounded-lg border px-3 py-2 text-sm text-slate-200 ${config.inputBg} ${config.inputBorder} ${config.inputFocus} focus:outline-none`}
+            onChange={(value) => onGameChange(value)}
+            className="mb-3"
           >
             {games.map((game) => (
-              <option key={game.id} value={game.id}>{game.name}</option>
+              <ListboxOption key={game.id} value={game.id}>
+                <ListboxLabel>{game.name}</ListboxLabel>
+              </ListboxOption>
             ))}
-          </select>
+          </Listbox>
         ) : null}
 
-        <div className="mb-2 grid grid-cols-2 gap-2">
-          <button
-            type="button"
+        <div className="mb-2 grid grid-cols-2 gap-2 px-2">
+          <Button
+            plain
             onClick={() => onViewChange('home')}
-            className={`rounded-lg px-2 py-2 text-sm font-medium transition-colors ${
+            className={`!w-full !rounded-lg !px-2 !py-2 !text-sm !font-medium transition-colors ${
               isHomeView ? `${viewConfig.home.selectedBg} ${viewConfig.home.primaryClass}` : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
             }`}
           >
             Home
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            plain
             onClick={() => onViewChange('recommended')}
-            className={`rounded-lg px-2 py-2 text-sm font-medium transition-colors ${
+            className={`!w-full !rounded-lg !px-2 !py-2 !text-sm !font-medium transition-colors ${
               isRecommendedView
                 ? `${viewConfig.recommended.selectedBg} ${viewConfig.recommended.primaryClass}`
                 : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
             }`}
           >
             {lists?.find((list) => list.id === activeListId)?.name || 'Setup'}
-          </button>
+          </Button>
         </div>
 
         <div className="grid grid-cols-3 gap-1.5">
           {factions.map((factionId) => {
             const factionConfig = viewConfig[factionId];
             return (
-              <button
+              <Button
+                plain
                 key={factionId}
-                type="button"
                 onClick={() => onViewChange(factionId)}
-                className={`rounded-lg px-2 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                className={`!w-full !rounded-lg !px-2 !py-1.5 !text-xs !font-semibold !uppercase !tracking-wide transition-colors ${
                   selectedView === factionId
                     ? `${factionConfig?.selectedBg || ''} ${factionConfig?.primaryClass || ''}`
                     : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                 }`}
               >
                 {factionConfig?.label || factionId}
-              </button>
+              </Button>
             );
           })}
         </div>
 
         {!isRecommendedView && !isHomeView ? (
           <div className="mt-3 space-y-2">
-            <input
+            <Input
               type="text"
               placeholder="Search units"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-100 placeholder-slate-500 ${config.inputBg} ${config.inputBorder} ${config.inputFocus} focus:outline-none`}
+              className="w-full"
             />
-            <input
+            <Input
               type="text"
               placeholder="Search quotes"
               value={quoteSearchQuery}
               onChange={(e) => onQuoteSearchChange(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-100 placeholder-slate-500 ${config.inputBg} ${config.inputBorder} ${config.inputFocus} focus:outline-none`}
+              className="w-full"
             />
           </div>
         ) : null}
-      </div>
+      </SidebarHeader>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+      <SidebarBody className="min-h-0 overflow-y-auto px-3 py-3">
         {isHomeView ? (
           <div className="surface-panel rounded-xl p-4 text-sm text-slate-400">
             Pick a faction to browse quotes, or open your setup list.
@@ -167,7 +185,7 @@ export default function Sidebar({
 
         {isRecommendedView
           ? recommendedSetup?.hooks?.map((hook) => (
-              <div key={hook.name} className="mb-2">
+              <SidebarSection key={hook.name} className="mb-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -194,7 +212,7 @@ export default function Sidebar({
                     })}
                   </div>
                 ) : null}
-              </div>
+              </SidebarSection>
             ))
           : null}
 
@@ -235,9 +253,9 @@ export default function Sidebar({
               </div>
             ))
           : null}
-      </div>
+      </SidebarBody>
 
-      <div className="border-t border-white/10 px-4 py-3 text-xs text-slate-500">{selectedGame.attribution}</div>
-    </aside>
+      <SidebarFooter className="border-white/10 px-4 py-3 text-xs text-slate-500">{selectedGame.attribution}</SidebarFooter>
+    </CatalystSidebar>
   );
 }
