@@ -19,9 +19,12 @@ vi.mock('child_process', () => ({
 
 let tempHome;
 let app;
+let originalShell;
 
 beforeEach(async () => {
   tempHome = createTempHome();
+  originalShell = process.env.SHELL;
+  process.env.SHELL = '/bin/zsh';
   vi.stubGlobal('fetch', vi.fn());
   vi.resetModules();
   const mod = await import('../app.js');
@@ -30,6 +33,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanupTempHome(tempHome);
+  process.env.SHELL = originalShell;
   vi.restoreAllMocks();
 });
 
@@ -77,6 +81,67 @@ describe('POST /api/toggle-sounds', () => {
     const res = await request(app).post('/api/toggle-sounds');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+
+    const enabled = readFileSync(join(tempHome, '.claude_sounds_enabled'), 'utf-8');
+    expect(enabled).toBe('1');
+  });
+});
+
+describe('POST /api/toggle-sounds (bash)', () => {
+  beforeEach(() => {
+    process.env.SHELL = '/bin/bash';
+  });
+
+  it('returns 400 when bash script is not installed', async () => {
+    const res = await request(app).post('/api/toggle-sounds');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/not installed/i);
+  });
+
+  it('stops watcher using bash -c', async () => {
+    writeFileSync(join(tempHome, '.claude-sounds.bash'), '#!/bin/bash');
+    writeFileSync(join(tempHome, '.claude_watcher.pid'), '12345');
+
+    let stopped = false;
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('kill -0 12345')) {
+        if (stopped) throw new Error('no such process');
+        return '';
+      }
+      if (cmd.includes('claude_sound_watcher_stop')) {
+        expect(cmd).toMatch(/^bash -c/);
+        stopped = true;
+        return '';
+      }
+      throw new Error(`unexpected: ${cmd}`);
+    });
+
+    const res = await request(app).post('/api/toggle-sounds');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.running).toBe(false);
+
+    const enabled = readFileSync(join(tempHome, '.claude_sounds_enabled'), 'utf-8');
+    expect(enabled).toBe('0');
+  });
+
+  it('starts watcher by spawning bash', async () => {
+    writeFileSync(join(tempHome, '.claude-sounds.bash'), '#!/bin/bash');
+
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('kill -0')) throw new Error('no such process');
+      throw new Error(`unexpected: ${cmd}`);
+    });
+
+    const res = await request(app).post('/api/toggle-sounds');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    expect(mockSpawn).toHaveBeenCalledWith(
+      'bash',
+      expect.arrayContaining([expect.stringContaining('claude-sounds.bash')]),
+      expect.any(Object)
+    );
 
     const enabled = readFileSync(join(tempHome, '.claude_sounds_enabled'), 'utf-8');
     expect(enabled).toBe('1');

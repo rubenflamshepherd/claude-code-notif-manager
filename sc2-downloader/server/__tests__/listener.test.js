@@ -138,3 +138,82 @@ describe('POST /api/setup-listener', () => {
     expect(res.body.addedToConfig).toBe(false);
   });
 });
+
+describe('GET /api/listener-status (bash)', () => {
+  beforeEach(() => {
+    process.env.SHELL = '/bin/bash';
+  });
+
+  it('reports scriptInstalled=true when .claude-sounds.bash exists', async () => {
+    writeFileSync(join(tempHome, '.claude-sounds.bash'), '#!/bin/bash');
+    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+
+    const res = await request(app).get('/api/listener-status');
+    expect(res.body.scriptInstalled).toBe(true);
+  });
+
+  it('reports inShellConfig=true when .bashrc has bash source line', async () => {
+    writeFileSync(join(tempHome, '.claude-sounds.bash'), '#!/bin/bash');
+    writeFileSync(join(tempHome, '.bashrc'), 'source ~/.claude-sounds.bash');
+    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+
+    const res = await request(app).get('/api/listener-status');
+    expect(res.body.inShellConfig).toBe(true);
+    expect(res.body.shellConfigs.bashrc).toBe(true);
+  });
+});
+
+describe('POST /api/setup-listener (bash)', () => {
+  beforeEach(() => {
+    process.env.SHELL = '/bin/bash';
+  });
+
+  it('copies bash script and adds source line to .bashrc', async () => {
+    const appDir = join(import.meta.dirname, '..');
+    const scriptSource = join(appDir, '..', 'claude-sounds.bash');
+
+    writeFileSync(join(tempHome, '.bashrc'), '# existing config\n');
+    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+
+    const res = await request(app).post('/api/setup-listener');
+
+    if (!existsSync(scriptSource)) {
+      expect(res.status).toBe(404);
+      return;
+    }
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.scriptInstalled).toBe(true);
+    expect(res.body.addedToConfig).toBe(true);
+
+    expect(existsSync(join(tempHome, '.claude-sounds.bash'))).toBe(true);
+
+    const config = readFileSync(join(tempHome, '.bashrc'), 'utf-8');
+    expect(config).toContain('.claude-sounds.bash');
+  });
+
+  it('uses bash -c to source the script', async () => {
+    const appDir = join(import.meta.dirname, '..');
+    const scriptSource = join(appDir, '..', 'claude-sounds.bash');
+
+    writeFileSync(join(tempHome, '.bashrc'), '# existing config\n');
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd === 'which fswatch') return '/usr/local/bin/fswatch';
+      return '';
+    });
+
+    const res = await request(app).post('/api/setup-listener');
+
+    if (!existsSync(scriptSource)) {
+      expect(res.status).toBe(404);
+      return;
+    }
+
+    const sourceCalls = mockExecSync.mock.calls.filter(([cmd]) =>
+      cmd.includes('source') && cmd.includes('claude-sounds')
+    );
+    expect(sourceCalls.length).toBeGreaterThan(0);
+    expect(sourceCalls[0][0]).toMatch(/^bash -c/);
+  });
+});
