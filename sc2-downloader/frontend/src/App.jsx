@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import UnitPanel from './components/UnitPanel';
+import RightSidebar from './components/RightSidebar';
 import HeaderNav from './components/HeaderNav';
 import gamesRegistry from './data/games.json';
 import initialRecommendedSetup from './data/recommendedSetup.json';
@@ -16,6 +17,7 @@ import {
   deleteList,
   renameList,
   setActiveList,
+  normalizeHooks,
 } from './utils/listManager';
 
 const STORAGE_KEY = 'sc2-quotes-recommended-setup';
@@ -56,6 +58,7 @@ function App() {
   const [listsState, setListsState] = useState(getInitialListsState);
   const [isSyncingToClaude, setIsSyncingToClaude] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
   const activeList = getActiveList(listsState);
   // Derive recommendedSetup from activeList for backward compatibility with child components
@@ -107,7 +110,7 @@ function App() {
       ...prev,
       lists: prev.lists.map(list =>
         list.id === getActiveList(prev).id
-          ? { ...list, hooks: newSetup.hooks }
+          ? { ...list, hooks: normalizeHooks(newSetup.hooks || []) }
           : list
       ),
     }));
@@ -194,6 +197,12 @@ function App() {
   const isRecommendedView = selectedView === 'recommended';
   const selectedFaction = (isRecommendedView || isHomeView) ? 'all' : selectedView;
 
+  useEffect(() => {
+    if (!isRecommendedView) {
+      setIsRightSidebarOpen(false);
+    }
+  }, [isRecommendedView]);
+
   const currentSections = (isRecommendedView || isHomeView || !gameData)
     ? []
     : selectedFaction === 'all'
@@ -216,6 +225,10 @@ function App() {
     setQuoteSearchQuery('');
   };
 
+  const handleRightSidebarToggle = () => {
+    setIsRightSidebarOpen((prev) => !prev);
+  };
+
   const getBgClass = () => {
     if (isRecommendedView || isHomeView || selectedFaction === 'all') return 'bg-gray-950';
     return getFactionStyles(selectedFaction).darkerBgClass;
@@ -224,9 +237,8 @@ function App() {
   return (
     <div className={`flex h-screen flex-col ${getBgClass()}`}>
       <HeaderNav
-        selectedGame={selectedGame}
-        games={gamesRegistry.games}
-        onGameChange={handleGameChange}
+        onGoHome={() => handleViewChange('home')}
+        onGoToActiveList={() => handleViewChange('recommended')}
         lists={listsState.lists}
         activeListId={listsState.activeListId}
         onSetActiveList={handleSetActiveList}
@@ -244,10 +256,9 @@ function App() {
           views={VIEWS}
           quoteSearchQuery={quoteSearchQuery}
           onQuoteSearchChange={setQuoteSearchQuery}
-          recommendedSetup={recommendedSetup}
-          lists={listsState.lists}
-          activeListId={listsState.activeListId}
           selectedGame={selectedGame}
+          games={gamesRegistry.games}
+          onGameChange={handleGameChange}
         />
         <UnitPanel
           unit={selectedUnit}
@@ -269,6 +280,13 @@ function App() {
           onCreateList={handleCreateList}
           onDeleteList={handleDeleteList}
           onRenameList={handleRenameList}
+          onSetActiveList={handleSetActiveList}
+        />
+        <RightSidebar
+          recommendedSetup={recommendedSetup}
+          isOpen={isRightSidebarOpen}
+          onToggle={handleRightSidebarToggle}
+          listName={activeList?.name}
         />
       </div>
     </div>

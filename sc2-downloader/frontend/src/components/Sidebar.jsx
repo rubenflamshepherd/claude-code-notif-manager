@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { buildViewConfig, getFactionStyles } from '../utils/factionStyles';
+import CustomSelect from './CustomSelect';
 
-export default function Sidebar({ sections, selectedUnit, onSelectUnit, selectedView, onViewChange, views, quoteSearchQuery, onQuoteSearchChange, recommendedSetup, lists, activeListId, selectedGame }) {
+export default function Sidebar({ sections, selectedUnit, onSelectUnit, selectedView, onViewChange, views, quoteSearchQuery, onQuoteSearchChange, selectedGame, games, onGameChange }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSections, setExpandedSections] = useState({});
 
@@ -11,24 +12,17 @@ export default function Sidebar({ sections, selectedUnit, onSelectUnit, selected
   const viewConfig = useMemo(() => buildViewConfig(selectedGame), [selectedGame]);
   const config = viewConfig[selectedView] || viewConfig[selectedGame.factions[0]?.id] || viewConfig.home;
   const factions = views.filter(v => v !== 'recommended' && v !== 'home');
+  const hasMultipleGames = games.length > 1;
 
   // Compute a key representing the current sections/view to detect when to reset
-  const expandedKey = isRecommendedView
-    ? `rec-${recommendedSetup?.hooks?.map(h => h.name).join(',')}`
-    : sections.map(s => s.name).join(',');
+  const expandedKey = sections.map(s => s.name).join(',');
   const [prevExpandedKey, setPrevExpandedKey] = useState(expandedKey);
 
   if (expandedKey !== prevExpandedKey) {
     setPrevExpandedKey(expandedKey);
-    if (isRecommendedView && recommendedSetup?.hooks) {
-      setExpandedSections(
-        recommendedSetup.hooks.reduce((acc, hook) => ({ ...acc, [hook.name]: true }), {})
-      );
-    } else {
-      setExpandedSections(
-        sections.reduce((acc, section) => ({ ...acc, [section.name]: true }), {})
-      );
-    }
+    setExpandedSections(
+      sections.reduce((acc, section) => ({ ...acc, [section.name]: true }), {})
+    );
   }
 
   const toggleSection = (sectionName) => {
@@ -52,18 +46,16 @@ export default function Sidebar({ sections, selectedUnit, onSelectUnit, selected
           Browse Quotes
         </h1>
 
+        {hasMultipleGames && (
+          <CustomSelect
+            value={selectedGame.id}
+            onChange={onGameChange}
+            options={games.map((game) => ({ value: game.id, label: game.name }))}
+            buttonClassName={`px-3 py-2 text-sm mb-3 ${config.inputFocus}`}
+          />
+        )}
+
         <div className="flex gap-1 mb-2">
-          <button
-            onClick={() => onViewChange('home')}
-            className={`py-1.5 px-2 text-sm font-medium rounded transition-colors ${
-              isHomeView
-                ? `${viewConfig.home.selectedBg} ${viewConfig.home.primaryClass}`
-                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-            }`}
-            title="Home"
-          >
-            Home
-          </button>
           {factions.map((factionId) => {
             const factionConfig = viewConfig[factionId];
             return (
@@ -81,23 +73,6 @@ export default function Sidebar({ sections, selectedUnit, onSelectUnit, selected
             );
           })}
         </div>
-
-        <button
-          onClick={() => onViewChange('recommended')}
-          className={`w-full py-1.5 px-2 text-sm font-medium rounded transition-colors mb-3 ${
-            isRecommendedView
-              ? `${viewConfig.recommended.selectedBg} ${viewConfig.recommended.primaryClass}`
-              : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-          }`}
-        >
-          Recommended
-        </button>
-
-        {isRecommendedView && (
-          <div className="mb-3 rounded border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-            Viewing list: {lists?.find(l => l.id === activeListId)?.name || 'Recommended Setup'}
-          </div>
-        )}
 
         {!isRecommendedView && !isHomeView && (
           <>
@@ -127,46 +102,7 @@ export default function Sidebar({ sections, selectedUnit, onSelectUnit, selected
             <p className="text-xs">or check out the Recommended Setup</p>
           </div>
         ) : isRecommendedView ? (
-          // Recommended Setup View - Show hooks
-          recommendedSetup?.hooks?.map((hook) => (
-            <div key={hook.name} className="mb-2">
-              <button
-                onClick={() => {
-                  toggleSection(hook.name);
-                  document.getElementById(`hook-${hook.name}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-                className="flex items-center gap-2 w-full text-left py-2 px-2 rounded hover:bg-white/5 transition-colors"
-              >
-                <svg
-                  className={`w-3 h-3 text-gray-400 transition-transform ${expandedSections[hook.name] ? 'rotate-90' : ''}`}
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <polygon points="8,5 19,12 8,19" />
-                </svg>
-                <span className="text-sm font-semibold text-amber-400">{hook.name}</span>
-                <span className="text-xs text-gray-500">({hook.recommendations.length})</span>
-              </button>
-
-              {expandedSections[hook.name] && (
-                <div className="ml-4">
-                  <p className="text-xs text-gray-500 px-2 py-1 mb-1">{hook.description}</p>
-                  {hook.recommendations.map((rec, idx) => {
-                    const recStyles = getFactionStyles(rec.race);
-                    return (
-                      <div
-                        key={`${hook.name}-${idx}`}
-                        className="py-1.5 px-2 text-sm"
-                      >
-                        <span className={`block truncate ${recStyles.primaryClass}`}>{rec.text}</span>
-                        <span className="text-xs text-gray-500">{rec.unit}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ))
+          <div />
         ) : (
           // Regular faction view - Show units
           filteredSections.map((section) => (

@@ -1,9 +1,8 @@
 import CustomSelect from './CustomSelect';
 
 export default function HeaderNav({
-  selectedGame,
-  games,
-  onGameChange,
+  onGoHome,
+  onGoToActiveList,
   lists,
   activeListId,
   onSetActiveList,
@@ -11,31 +10,38 @@ export default function HeaderNav({
   isSyncing,
   syncResult,
 }) {
-  const hasMultipleGames = games.length > 1;
-
   return (
     <header className="border-b border-gray-800 bg-gray-950/95 px-4 py-3 backdrop-blur">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="mr-3 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onGoHome}
+          className="mr-3 flex items-center gap-3 rounded-md px-1 py-1 transition-colors hover:bg-white/5"
+          title="Go to home"
+        >
           <img src="/claude-notif-logo.svg" alt="Claude Code Notif logo" className="h-12 w-12" />
           <p className="text-sm font-semibold text-white">Claude Code Notif Settings</p>
-        </div>
+        </button>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {hasMultipleGames && (
-            <CustomSelect
-              value={selectedGame.id}
-              onChange={onGameChange}
-              options={games.map((game) => ({ value: game.id, label: game.name }))}
-              buttonClassName="px-3 py-2 text-sm min-w-[10rem]"
-            />
-          )}
+          <span className="text-sm text-gray-300">Active list is</span>
           <CustomSelect
             value={activeListId}
             onChange={onSetActiveList}
             options={lists.map((list) => ({ value: list.id, label: list.name }))}
             buttonClassName="px-3 py-2 text-sm min-w-[12rem] border-amber-500/40 bg-gray-900/70 hover:bg-gray-800/80 hover:border-amber-400/60"
           />
+          <button
+            type="button"
+            onClick={onGoToActiveList}
+            className="rounded-lg border border-amber-500/40 bg-gray-900/70 p-2 text-amber-300 transition-colors hover:border-amber-400/60 hover:bg-gray-800/80"
+            title="Go to active list page"
+            aria-label="Go to active list page"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7m0 0H9m8 0v8" />
+            </svg>
+          </button>
           <button
             onClick={onSyncToClaude}
             disabled={isSyncing}

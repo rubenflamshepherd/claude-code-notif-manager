@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import CustomSelect from './CustomSelect';
 import QuoteCategory from './QuoteCategory';
 import QuoteSearchResults from './QuoteSearchResults';
 import SelectionActionBar from './SelectionActionBar';
@@ -77,7 +78,7 @@ function SortableRecommendation({ rec, hook, hookNames, onMoveRecommendation, on
   );
 }
 
-export default function UnitPanel({ unit, race = 'protoss', sections = [], quoteSearchQuery = '', isHomeView = false, isRecommendedView = false, recommendedSetup = null, onRemoveRecommendation = null, onMoveRecommendation = null, onReorderRecommendations = null, onAddRecommendation = null, onImportSetup = null, onNavigate = null, selectedGame = null, lists = [], activeListId = 'default', onCreateList = null, onDeleteList = null, onRenameList = null }) {
+export default function UnitPanel({ unit, race = 'protoss', sections = [], quoteSearchQuery = '', isHomeView = false, isRecommendedView = false, recommendedSetup = null, onRemoveRecommendation = null, onMoveRecommendation = null, onReorderRecommendations = null, onAddRecommendation = null, onImportSetup = null, selectedGame = null, lists = [], activeListId = 'default', onCreateList = null, onDeleteList = null, onRenameList = null, onSetActiveList = null }) {
   // Use unit's race for styling when available (for "all" tab), otherwise use selected race
   const effectiveRace = unit?.race || race;
   const primaryClass = getFactionStyles(effectiveRace).primaryClass;
@@ -189,7 +190,7 @@ export default function UnitPanel({ unit, race = 'protoss', sections = [], quote
 
   // Home View - Landing Page
   if (isHomeView) {
-    return <LandingPage onNavigate={onNavigate} />;
+    return <LandingPage />;
   }
 
   // Recommended Setup View
@@ -212,7 +213,12 @@ export default function UnitPanel({ unit, race = 'protoss', sections = [], quote
     const renderHook = (hook) => (
       <div key={hook.name} id={`hook-${hook.name}`} className="mb-8">
         <div className="mb-3">
-          <h2 className="text-lg font-semibold text-amber-400">{hook.name}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-amber-400">{hook.name}</h2>
+            <span className="rounded-full border border-gray-600 bg-gray-800 px-2 py-0.5 text-xs text-gray-300">
+              {hook.recommendations.length}
+            </span>
+          </div>
           <p className="text-sm text-gray-500">{hook.description}</p>
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(hook.name)}>
@@ -240,9 +246,13 @@ export default function UnitPanel({ unit, race = 'protoss', sections = [], quote
           <div className="mb-6 flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold text-amber-400">
-                  {lists.find(l => l.id === activeListId)?.name || 'Recommended Setup'}
-                </h1>
+                <CustomSelect
+                  value={activeListId}
+                  onChange={onSetActiveList}
+                  options={lists.map((list) => ({ value: list.id, label: list.name }))}
+                  buttonClassName="px-3 py-1.5 text-2xl font-bold text-amber-400 border-amber-500/40 bg-gray-900/70 hover:bg-gray-800/80 hover:border-amber-400/60"
+                  menuClassName="min-w-[16rem]"
+                />
                 <button
                   onClick={() => {
                     const name = window.prompt('New list name:');

@@ -11,7 +11,23 @@ const HOOK_TO_FOLDER = {
   Question: 'question',
 };
 
-export default function LandingPage({ onNavigate }) {
+function StatusIndicator({ label, tooltip, dotClassName }) {
+  return (
+    <div
+      className="group relative flex items-center gap-2 focus-within:z-10"
+      tabIndex={0}
+      aria-label={`${label}. ${tooltip}`}
+    >
+      <div className={`w-3 h-3 rounded-full ${dotClassName}`} />
+      <span className="text-sm text-gray-400">{label}</span>
+      <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-left text-xs text-gray-200 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+        {tooltip}
+      </div>
+    </div>
+  );
+}
+
+export default function LandingPage() {
   const [listenerStatus, setListenerStatus] = useState(null);
   const [hooksStatus, setHooksStatus] = useState(null);
   const [soundsStatus, setSoundsStatus] = useState(null);
@@ -168,6 +184,16 @@ export default function LandingPage({ onNavigate }) {
     },
   ];
 
+  const hooksTooltip = `Hooks status: ${hooksStatus?.allConfigured ? 'configured' : 'not configured'}. Checks whether Claude Code hooks are installed in ~/.claude/settings.json.`;
+  const soundsTooltip = `Sounds status: ${soundsStatus?.configured ? 'configured' : 'not configured'}. Checks whether required sound folders exist in ~/.claude/sounds/.`;
+  const listenerTooltip = `Listener status: ${listenerStatus?.scriptInstalled ? 'installed' : 'not installed'}. Checks whether the local watcher script is installed.`;
+  const shellConfigName =
+    listenerStatus?.shellConfigs?.zshrc ? '.zshrc' :
+    listenerStatus?.shellConfigs?.bashrc ? '.bashrc' :
+    listenerStatus?.shellConfigs?.bash_profile ? '.bash_profile' :
+    'Shell Config';
+  const shellConfigTooltip = `${shellConfigName} status: ${listenerStatus?.inShellConfig ? 'configured' : 'not configured'}. Checks whether your shell config sources the listener script.`;
+
   return (
     <div className="flex-1 overflow-y-auto p-8">
       {/* Hero Section */}
@@ -179,15 +205,6 @@ export default function LandingPage({ onNavigate }) {
           Add iconic game quotes to your Claude Code sessions. Browse hundreds of voice lines, preview them, and connect them directly to your Claude Code.
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
-          <button
-            onClick={() => onNavigate('recommended')}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors text-lg font-medium"
-          >
-            Get Started
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </button>
           <button
             onClick={handleOneClickSetup}
             disabled={isSettingUp}
@@ -216,38 +233,44 @@ export default function LandingPage({ onNavigate }) {
 
         {/* Status Indicators */}
         <div className="flex items-center justify-center gap-6 mt-6">
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${
-              currentStep === 'hooks' ? 'bg-amber-400 animate-pulse' :
-              hooksStatus?.allConfigured ? 'bg-green-400' : 'bg-gray-600'
-            }`} />
-            <span className="text-sm text-gray-400">Hooks</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${
-              currentStep === 'sounds' ? 'bg-amber-400 animate-pulse' :
-              soundsStatus?.configured ? 'bg-green-400' : 'bg-gray-600'
-            }`} />
-            <span className="text-sm text-gray-400">Sounds</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${
-              currentStep === 'listener' ? 'bg-amber-400 animate-pulse' :
-              listenerStatus?.scriptInstalled ? 'bg-green-400' : 'bg-gray-600'
-            }`} />
-            <span className="text-sm text-gray-400">Listener</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${
-              listenerStatus?.inShellConfig ? 'bg-green-400' : 'bg-gray-600'
-            }`} />
-            <span className="text-sm text-gray-400">
-              {listenerStatus?.shellConfigs?.zshrc ? '.zshrc' :
-               listenerStatus?.shellConfigs?.bashrc ? '.bashrc' :
-               listenerStatus?.shellConfigs?.bash_profile ? '.bash_profile' :
-               'Shell Config'}
-            </span>
-          </div>
+          <StatusIndicator
+            label="Hooks"
+            tooltip={hooksTooltip}
+            dotClassName={
+              currentStep === 'hooks'
+                ? 'bg-amber-400 animate-pulse'
+                : hooksStatus?.allConfigured
+                  ? 'bg-green-400'
+                  : 'bg-gray-600'
+            }
+          />
+          <StatusIndicator
+            label="Sounds"
+            tooltip={soundsTooltip}
+            dotClassName={
+              currentStep === 'sounds'
+                ? 'bg-amber-400 animate-pulse'
+                : soundsStatus?.configured
+                  ? 'bg-green-400'
+                  : 'bg-gray-600'
+            }
+          />
+          <StatusIndicator
+            label="Listener"
+            tooltip={listenerTooltip}
+            dotClassName={
+              currentStep === 'listener'
+                ? 'bg-amber-400 animate-pulse'
+                : listenerStatus?.scriptInstalled
+                  ? 'bg-green-400'
+                  : 'bg-gray-600'
+            }
+          />
+          <StatusIndicator
+            label={shellConfigName}
+            tooltip={shellConfigTooltip}
+            dotClassName={listenerStatus?.inShellConfig ? 'bg-green-400' : 'bg-gray-600'}
+          />
           {listenerStatus?.scriptInstalled && (
             <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-700">
               <button
