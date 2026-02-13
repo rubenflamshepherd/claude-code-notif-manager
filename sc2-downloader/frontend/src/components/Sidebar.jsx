@@ -1,36 +1,28 @@
 import { useState, useMemo } from 'react';
 import { buildViewConfig, getFactionStyles } from '../utils/factionStyles';
+import CustomSelect from './CustomSelect';
 
-export default function Sidebar({ sections, selectedUnit, onSelectUnit, selectedView, onViewChange, views, quoteSearchQuery, onQuoteSearchChange, recommendedSetup, selectedGame, games, onGameChange, lists, activeListId }) {
+export default function Sidebar({ sections, selectedUnit, onSelectUnit, selectedView, onViewChange, views, quoteSearchQuery, onQuoteSearchChange, selectedGame, games, onGameChange }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSections, setExpandedSections] = useState({});
 
   const isHomeView = selectedView === 'home';
   const isRecommendedView = selectedView === 'recommended';
 
-  // Build viewConfig dynamically from the selected game's factions
   const viewConfig = useMemo(() => buildViewConfig(selectedGame), [selectedGame]);
-
   const config = viewConfig[selectedView] || viewConfig[selectedGame.factions[0]?.id] || viewConfig.home;
   const factions = views.filter(v => v !== 'recommended' && v !== 'home');
+  const hasMultipleGames = games.length > 1;
 
   // Compute a key representing the current sections/view to detect when to reset
-  const expandedKey = isRecommendedView
-    ? `rec-${recommendedSetup?.hooks?.map(h => h.name).join(',')}`
-    : sections.map(s => s.name).join(',');
+  const expandedKey = sections.map(s => s.name).join(',');
   const [prevExpandedKey, setPrevExpandedKey] = useState(expandedKey);
 
   if (expandedKey !== prevExpandedKey) {
     setPrevExpandedKey(expandedKey);
-    if (isRecommendedView && recommendedSetup?.hooks) {
-      setExpandedSections(
-        recommendedSetup.hooks.reduce((acc, hook) => ({ ...acc, [hook.name]: true }), {})
-      );
-    } else {
-      setExpandedSections(
-        sections.reduce((acc, section) => ({ ...acc, [section.name]: true }), {})
-      );
-    }
+    setExpandedSections(
+      sections.reduce((acc, section) => ({ ...acc, [section.name]: true }), {})
+    );
   }
 
   const toggleSection = (sectionName) => {
@@ -47,41 +39,23 @@ export default function Sidebar({ sections, selectedUnit, onSelectUnit, selected
     )
   })).filter(section => section.units.length > 0);
 
-  const hasMultipleGames = games.length > 1;
-
   return (
-    <div className={`w-72 ${config.bgClass} border-r ${config.borderClass} flex flex-col h-screen`}>
+    <div className={`w-72 ${config.bgClass} border-r ${config.borderClass} flex h-full flex-col`}>
       <div className={`p-4 border-b ${config.borderClass}`}>
-        <h1 className={`text-lg font-bold ${config.primaryClass} mb-3`}>
-          {selectedGame.name} Quotes
+        <h1 className={`text-base font-bold ${config.primaryClass} mb-3`}>
+          Browse Quotes
         </h1>
 
         {hasMultipleGames && (
-          <select
+          <CustomSelect
             value={selectedGame.id}
-            onChange={(e) => onGameChange(e.target.value)}
-            className={`w-full px-3 py-2 ${config.inputBg} border ${config.inputBorder} rounded text-sm text-gray-200 focus:outline-none ${config.inputFocus} mb-3`}
-          >
-            {games.map(game => (
-              <option key={game.id} value={game.id}>{game.name}</option>
-            ))}
-          </select>
+            onChange={onGameChange}
+            options={games.map((game) => ({ value: game.id, label: game.name }))}
+            buttonClassName={`px-3 py-2 text-sm mb-3 ${config.inputFocus}`}
+          />
         )}
 
         <div className="flex gap-1 mb-2">
-          <button
-            onClick={() => onViewChange('home')}
-            className={`py-1.5 px-2 text-sm font-medium rounded transition-colors ${
-              isHomeView
-                ? `${viewConfig.home.selectedBg} ${viewConfig.home.primaryClass}`
-                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-            }`}
-            title="Home"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </button>
           {factions.map((factionId) => {
             const factionConfig = viewConfig[factionId];
             return (
@@ -99,20 +73,6 @@ export default function Sidebar({ sections, selectedUnit, onSelectUnit, selected
             );
           })}
         </div>
-
-        <button
-          onClick={() => onViewChange('recommended')}
-          className={`w-full py-1.5 px-2 text-sm font-medium rounded transition-colors mb-3 flex items-center justify-center gap-1.5 ${
-            isRecommendedView
-              ? `${viewConfig.recommended.selectedBg} ${viewConfig.recommended.primaryClass}`
-              : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-          }`}
-        >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-          {lists?.find(l => l.id === activeListId)?.name || 'Recommended Setup'}
-        </button>
 
         {!isRecommendedView && !isHomeView && (
           <>
@@ -142,46 +102,7 @@ export default function Sidebar({ sections, selectedUnit, onSelectUnit, selected
             <p className="text-xs">or check out the Recommended Setup</p>
           </div>
         ) : isRecommendedView ? (
-          // Recommended Setup View - Show hooks
-          recommendedSetup?.hooks?.map((hook) => (
-            <div key={hook.name} className="mb-2">
-              <button
-                onClick={() => {
-                  toggleSection(hook.name);
-                  document.getElementById(`hook-${hook.name}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-                className="flex items-center gap-2 w-full text-left py-2 px-2 rounded hover:bg-white/5 transition-colors"
-              >
-                <svg
-                  className={`w-3 h-3 text-gray-400 transition-transform ${expandedSections[hook.name] ? 'rotate-90' : ''}`}
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <polygon points="8,5 19,12 8,19" />
-                </svg>
-                <span className="text-sm font-semibold text-amber-400">{hook.name}</span>
-                <span className="text-xs text-gray-500">({hook.recommendations.length})</span>
-              </button>
-
-              {expandedSections[hook.name] && (
-                <div className="ml-4">
-                  <p className="text-xs text-gray-500 px-2 py-1 mb-1">{hook.description}</p>
-                  {hook.recommendations.map((rec, idx) => {
-                    const recStyles = getFactionStyles(rec.race);
-                    return (
-                      <div
-                        key={`${hook.name}-${idx}`}
-                        className="py-1.5 px-2 text-sm"
-                      >
-                        <span className={`block truncate ${recStyles.primaryClass}`}>{rec.text}</span>
-                        <span className="text-xs text-gray-500">{rec.unit}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ))
+          <div />
         ) : (
           // Regular faction view - Show units
           filteredSections.map((section) => (

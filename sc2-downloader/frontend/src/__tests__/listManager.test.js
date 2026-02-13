@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   migrateToMultiList,
   createEmptyHooks,
+  normalizeHooks,
   createList,
   deleteList,
   renameList,
@@ -70,14 +71,36 @@ describe('migrateToMultiList', () => {
     expect(result.lists).toHaveLength(1);
     expect(result.lists[0].id).toBe('default');
     expect(result.lists[0].name).toBe('Recommended');
-    expect(result.lists[0].hooks).toEqual(oldData.hooks);
+    expect(result.lists[0].hooks).toHaveLength(6);
+    expect(result.lists[0].hooks.map(h => h.name)).toEqual([
+      'SessionStart',
+      'UserPromptSubmit',
+      'Stop',
+      'PreCompact',
+      'PermissionPrompt',
+      'Question',
+    ]);
     expect(result.activeListId).toBe('default');
   });
 
-  it('passes through new format unchanged', () => {
+  it('normalizes new format lists by adding missing standard hooks', () => {
     const newData = makeState();
     const result = migrateToMultiList(newData, defaultSetup);
-    expect(result).toEqual(newData);
+    expect(result.lists).toHaveLength(1);
+    expect(result.lists[0].hooks).toHaveLength(6);
+    expect(result.lists[0].hooks.find(h => h.name === 'SessionStart').recommendations).toHaveLength(1);
+  });
+
+  it('keeps existing recommendations while adding missing hooks', () => {
+    const oldData = {
+      hooks: [
+        { name: 'Stop', description: 'When Claude finishes', recommendations: [{ text: 'Done', unit: 'SCV', race: 'terran', audioUrl: 'http://done.mp3' }] },
+      ],
+    };
+    const result = migrateToMultiList(oldData, defaultSetup);
+    const stopHook = result.lists[0].hooks.find(h => h.name === 'Stop');
+    expect(stopHook.recommendations).toHaveLength(1);
+    expect(stopHook.recommendations[0].audioUrl).toBe('http://done.mp3');
   });
 
   it('returns default setup wrapped as multi-list when data is null', () => {
@@ -91,6 +114,27 @@ describe('migrateToMultiList', () => {
     const result = migrateToMultiList(undefined, defaultSetup);
     expect(result.lists).toHaveLength(1);
     expect(result.activeListId).toBe('default');
+  });
+});
+
+// ─── normalizeHooks ────────────────────────────────────────────────────────────
+
+describe('normalizeHooks', () => {
+  it('returns all standard hooks and preserves existing hook data', () => {
+    const hooks = normalizeHooks([
+      { name: 'Stop', description: 'desc', recommendations: [{ text: 'Done', unit: 'SCV', race: 'terran', audioUrl: 'http://done.mp3' }] },
+    ]);
+
+    expect(hooks).toHaveLength(6);
+    expect(hooks.map(h => h.name)).toEqual([
+      'SessionStart',
+      'UserPromptSubmit',
+      'Stop',
+      'PreCompact',
+      'PermissionPrompt',
+      'Question',
+    ]);
+    expect(hooks.find(h => h.name === 'Stop').recommendations).toHaveLength(1);
   });
 });
 

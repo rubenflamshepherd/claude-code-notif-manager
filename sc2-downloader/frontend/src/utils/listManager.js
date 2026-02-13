@@ -7,6 +7,34 @@ const HOOK_DEFINITIONS = [
   { name: 'Question', description: 'When Claude asks the user a question' },
 ];
 
+export function normalizeHooks(hooks = []) {
+  const hookMap = new Map(hooks.map(hook => [hook.name, hook]));
+
+  const normalizedStandardHooks = HOOK_DEFINITIONS.map(definition => {
+    const existing = hookMap.get(definition.name);
+    if (!existing) {
+      return { ...definition, recommendations: [] };
+    }
+
+    return {
+      ...existing,
+      description: existing.description || definition.description,
+      recommendations: Array.isArray(existing.recommendations) ? existing.recommendations : [],
+    };
+  });
+
+  // Preserve unknown hook entries for forward compatibility.
+  const knownHookNames = new Set(HOOK_DEFINITIONS.map(definition => definition.name));
+  const unknownHooks = hooks
+    .filter(hook => !knownHookNames.has(hook.name))
+    .map(hook => ({
+      ...hook,
+      recommendations: Array.isArray(hook.recommendations) ? hook.recommendations : [],
+    }));
+
+  return [...normalizedStandardHooks, ...unknownHooks];
+}
+
 export function createEmptyHooks() {
   return HOOK_DEFINITIONS.map(h => ({ ...h, recommendations: [] }));
 }
@@ -18,10 +46,18 @@ export function migrateToMultiList(data, defaultSetup) {
       activeListId: 'default',
     };
   }
-  if (data.lists) return data;
+  if (data.lists) {
+    return {
+      ...data,
+      lists: data.lists.map(list => ({
+        ...list,
+        hooks: normalizeHooks(list.hooks || []),
+      })),
+    };
+  }
   // Old format: has hooks but no lists
   return {
-    lists: [{ id: 'default', name: 'Recommended', hooks: data.hooks }],
+    lists: [{ id: 'default', name: 'Recommended', hooks: normalizeHooks(data.hooks || []) }],
     activeListId: 'default',
   };
 }
